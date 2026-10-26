@@ -158,6 +158,7 @@
                         <input
                             type="text"
                             v-model="sta.tlc"
+                            required
                             pattern="^[A-ZＡ-Ｚ]{3}$"
                             @input="sta.tlc = formatUppercase($event.target.value)">
                         <div class="invalid-message">アルファベット3文字で入力してください</div>
