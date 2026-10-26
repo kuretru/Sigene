@@ -751,6 +751,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         colorCtx.fillStyle = data.black;
         colorCtx.fillRect(Math.floor(_x2) - 3, Math.floor(_y) - 3, 86, 86);
         //角丸四角形
+        maskCtx.fillStyle = "#FFF";
         roundRect(maskCtx, _x2, _y, 80, 80, _n2.fill ? 8 : 7);
         maskCtx[_n2.fill ? "fill" : "stroke"]();
         //文字

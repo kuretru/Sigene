@@ -747,6 +747,7 @@
                 colorCtx.fillStyle = data.black;
                 colorCtx.fillRect(Math.floor(x) - 3, Math.floor(y) - 3, 86, 86);
                 //角丸四角形
+                maskCtx.fillStyle = "#FFF";
                 roundRect(maskCtx, x, y, 80, 80, n.fill? 8 : 7);
                 maskCtx[n.fill? "fill" : "stroke"]();
                 //文字
