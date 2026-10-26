@@ -15,7 +15,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 (function () {
   var FONT_JAPANESE = "'Mplus 1p', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'M+ 1p', sans-serif";
   var FONT_HELVETICA = "'Helvetica', 'Arial', sans-serif";
-  var FONT_FRUTIGER = "Cabin', 'Open Sans', 'Lato', 'sans-serif";
+  var FONT_FRUTIGER = "'Cabin', 'Open Sans', 'Lato', sans-serif";
   var FONT_CHINESE = "'Noto Sans SC', sans-serif";
   var FONT_KOREAN = "'Noto Sans KR', sans-serif";
   var defaultData = function defaultData() {
