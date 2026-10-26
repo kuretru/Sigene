@@ -33,6 +33,7 @@
                 <section>
                     <button @click.prevent="reset() + update()">入力内容をリセット</button>
                     <button @click.prevent="saveAsPNG() + update()">画像として保存</button>
+                    <button @click.prevent="saveAsSVG() + update()">SVGとして保存</button>
                     <div>
                         <button @click.prevent="share_url">共有URLを取得</button>
                         <input type="text" v-model="shareURL">

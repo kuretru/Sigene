@@ -1,5 +1,11 @@
 "use strict";
 
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, e) { if ("object" != _typeof(t) || !t) return t; var r; if ("undefined" != typeof Symbol && void 0 !== (r = t[Symbol.toPrimitive])) { var i = r.call(t, e || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === e ? String : Number)(t); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -807,6 +813,183 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     a.href = canvas2.toDataURL();
     a.dispatchEvent(new MouseEvent("click"));
   };
+  var saveAsSVG = function saveAsSVG() {
+    if (!this.$el.checkValidity()) return;
+    var frame = frames[this.signBoard.type];
+    var renderContent = drawContent[this.signType];
+    var data = this;
+    var escape = function escape(value) {
+      return String(value).replace(/[&<>"']/g, function (c) {
+        return {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&apos;"
+        }[c];
+      });
+    };
+    var SVGContext = /*#__PURE__*/function () {
+      function SVGContext(defs) {
+        _classCallCheck(this, SVGContext);
+        this.defs = defs;
+        this.elements = [];
+        this.fillStyle = "#000";
+        this.strokeStyle = "#000";
+        this.lineWidth = 1;
+        this.font = "10px sans-serif";
+        this.textAlign = "left";
+        this.textBaseline = "alphabetic";
+        this.measureContext = document.createElement("canvas").getContext("2d");
+      }
+      return _createClass(SVGContext, [{
+        key: "beginPath",
+        value: function beginPath() {
+          this.path = [];
+        }
+      }, {
+        key: "moveTo",
+        value: function moveTo(x, y) {
+          this.path.push("M ".concat(x, " ").concat(y));
+          this.point = [x, y];
+        }
+      }, {
+        key: "lineTo",
+        value: function lineTo(x, y) {
+          this.path.push("L ".concat(x, " ").concat(y));
+          this.point = [x, y];
+        }
+      }, {
+        key: "closePath",
+        value: function closePath() {
+          this.path.push("Z");
+        }
+      }, {
+        key: "arcTo",
+        value: function arcTo(x, y, nextX, nextY, radius) {
+          // The sign uses arcTo for perpendicular rounded rectangle corners.
+          var dx = this.point[0] - x;
+          var dy = this.point[1] - y;
+          var nextDx = nextX - x;
+          var nextDy = nextY - y;
+          var length = Math.hypot(dx, dy);
+          var nextLength = Math.hypot(nextDx, nextDy);
+          if (!length || !nextLength || !radius) {
+            this.lineTo(x, y);
+            return;
+          }
+          this.lineTo(x + dx / length * radius, y + dy / length * radius);
+          var endX = x + nextDx / nextLength * radius;
+          var endY = y + nextDy / nextLength * radius;
+          var sweep = dx * nextDy - dy * nextDx < 0 ? 1 : 0;
+          this.path.push("A ".concat(radius, " ").concat(radius, " 0 0 ").concat(sweep, " ").concat(endX, " ").concat(endY));
+          this.point = [endX, endY];
+        }
+      }, {
+        key: "paint",
+        value: function paint(style) {
+          return escape(style.url || style);
+        }
+      }, {
+        key: "add",
+        value: function add(shape) {
+          if (this.shadowBlur && this.shadowColor !== "rgba(0, 0, 0, 0)") {
+            var id = "effect" + this.defs.length;
+            this.defs.push("<filter id=\"".concat(id, "\" x=\"-100%\" y=\"-100%\" width=\"300%\" height=\"300%\"><feDropShadow dx=\"").concat(this.shadowOffsetX || 0, "\" dy=\"").concat(this.shadowOffsetY || 0, "\" stdDeviation=\"").concat(this.shadowBlur / 2, "\" flood-color=\"").concat(escape(this.shadowColor), "\"/></filter>"));
+            shape = "<g filter=\"url(#".concat(id, ")\">").concat(shape, "</g>");
+          }
+          this.elements.push(shape);
+        }
+      }, {
+        key: "fillRect",
+        value: function fillRect(x, y, width, height) {
+          this.add("<rect x=\"".concat(x, "\" y=\"").concat(y, "\" width=\"").concat(width, "\" height=\"").concat(height, "\" fill=\"").concat(this.paint(this.fillStyle), "\"/>"));
+        }
+      }, {
+        key: "fill",
+        value: function fill() {
+          this.add("<path d=\"".concat(this.path.join(" "), "\" fill=\"").concat(this.paint(this.fillStyle), "\"/>"));
+        }
+      }, {
+        key: "stroke",
+        value: function stroke() {
+          this.add("<path d=\"".concat(this.path.join(" "), "\" fill=\"none\" stroke=\"").concat(this.paint(this.strokeStyle), "\" stroke-width=\"").concat(this.lineWidth, "\"/>"));
+        }
+      }, {
+        key: "createLinearGradient",
+        value: function createLinearGradient(x1, y1, x2, y2) {
+          var _this2 = this;
+          var id = "gradient" + this.defs.length;
+          var index = this.defs.length;
+          var stops = [];
+          this.defs.push("");
+          return {
+            url: "url(#".concat(id, ")"),
+            addColorStop: function addColorStop(offset, color) {
+              stops.push("<stop offset=\"".concat(offset, "\" stop-color=\"").concat(escape(color), "\"/>"));
+              _this2.defs[index] = "<linearGradient id=\"".concat(id, "\" gradientUnits=\"userSpaceOnUse\" x1=\"").concat(x1, "\" y1=\"").concat(y1, "\" x2=\"").concat(x2, "\" y2=\"").concat(y2, "\">").concat(stops.join(""), "</linearGradient>");
+            }
+          };
+        }
+      }, {
+        key: "measureText",
+        value: function measureText(text) {
+          this.measureContext.font = this.font;
+          return this.measureContext.measureText(text);
+        }
+      }, {
+        key: "fillText",
+        value: function fillText(text, x, y, maxWidth) {
+          var font = this.font.trim().match(/^(?:(.*?)\s+)?([\d.]+)px\s+(.+)$/);
+          var anchor = {
+            center: "middle",
+            right: "end"
+          }[this.textAlign] || "start";
+          var baseline = this.textBaseline === "middle" ? "central" : "alphabetic";
+          var length = maxWidth && this.measureText(text).width > maxWidth ? " textLength=\"".concat(maxWidth, "\" lengthAdjust=\"spacingAndGlyphs\"") : "";
+          this.add("<text x=\"".concat(x, "\" y=\"").concat(y, "\" fill=\"").concat(this.paint(this.fillStyle), "\" font-weight=\"").concat(escape(font[1] || "normal"), "\" font-size=\"").concat(font[2], "\" font-family=\"").concat(escape(font[3]), "\" text-anchor=\"").concat(anchor, "\" dominant-baseline=\"").concat(baseline, "\" xml:space=\"preserve\"").concat(length, ">").concat(escape(text), "</text>"));
+        }
+      }, {
+        key: "drawImage",
+        value: function drawImage(canvas, x, y) {
+          // Keep the existing pixel-based illumination overlay; the sign stays vector.
+          this.add("<image x=\"".concat(x, "\" y=\"").concat(y, "\" width=\"").concat(canvas.width, "\" height=\"").concat(canvas.height, "\" href=\"").concat(canvas.toDataURL(), "\"/>"));
+        }
+      }]);
+    }();
+    var padding = frame.padding;
+    var width = frame.width + padding.left + padding.right;
+    var height = frame.height + padding.top + padding.bottom;
+    var defs = [];
+    var board = new SVGContext(defs);
+    var colors = new SVGContext(defs);
+    var mask = new SVGContext(defs);
+    frame.draw(board, width, height, 1, data);
+    mask.fillStyle = "#000";
+    mask.fillRect(0, 0, frame.width, frame.height);
+    mask.fillStyle = mask.strokeStyle = "#FFF";
+    renderContent(colors, mask, data);
+    defs.push("<mask id=\"content-mask\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"".concat(frame.width, "\" height=\"").concat(frame.height, "\" style=\"mask-type:luminance\">").concat(mask.elements.join(""), "</mask>"));
+    var overlay = "";
+    if (data.signBoard.light) {
+      var light = new SVGContext(defs);
+      frame.shadow(light, width, height, 1, data);
+      overlay = light.elements.join("");
+    }
+    var svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"".concat(width, "\" height=\"").concat(height, "\" viewBox=\"0 0 ").concat(width, " ").concat(height, "\"><defs>").concat(defs.join(""), "</defs>").concat(board.elements.join(""), "<g transform=\"translate(").concat(padding.left, " ").concat(padding.top, ")\"><g mask=\"url(#content-mask)\">").concat(colors.elements.join(""), "</g></g>").concat(overlay, "</svg>");
+    var url = URL.createObjectURL(new Blob([svg], {
+      type: "image/svg+xml;charset=utf-8"
+    }));
+    var link = document.createElement("a");
+    link.download = "駅名標_" + data.sta.name.kanji + ".svg";
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () {
+      return URL.revokeObjectURL(url);
+    }, 1000);
+  };
   function draw(ctx, width, height, scale, data) {
     var frame = frames[data.signBoard.type];
     var fp = frame.padding;
@@ -846,7 +1029,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
   var vm = new Vue({
     el: "#vm",
     mounted: function mounted() {
-      var _this2 = this;
+      var _this3 = this;
       var lastSaved = localStorage.getItem("lastSaved");
       var openData;
       if (location.search.match(/\?desig1=/)) {
@@ -858,7 +1041,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
       }
       if (openData) {
         Object.keys(openData).forEach(function (key) {
-          return _this2[key] = openData[key];
+          return _this3[key] = openData[key];
         });
       }
       this.update();
@@ -1050,10 +1233,10 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         }).toUpperCase();
       },
       reset: function reset() {
-        var _this3 = this;
+        var _this4 = this;
         var df = defaultData();
         Object.keys(df).forEach(function (key) {
-          return _this3[key] = df[key];
+          return _this4[key] = df[key];
         });
       },
       share_url: function share_url() {
@@ -1071,6 +1254,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         document.execCommand("copy");
       },
       saveAsPNG: saveAsPNG,
+      saveAsSVG: saveAsSVG,
       update: update
     }
   });

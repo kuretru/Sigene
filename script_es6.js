@@ -817,6 +817,135 @@
         a.dispatchEvent(new MouseEvent("click"));
     };
 
+    const saveAsSVG = function(){
+        if(!this.$el.checkValidity()) return;
+        const frame = frames[this.signBoard.type];
+        const renderContent = drawContent[this.signType];
+        const data = this;
+
+        const escape = value => String(value).replace(/[&<>"']/g, c => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;"
+        }[c]));
+
+        class SVGContext {
+            constructor(defs) {
+                this.defs = defs;
+                this.elements = [];
+                this.fillStyle = "#000";
+                this.strokeStyle = "#000";
+                this.lineWidth = 1;
+                this.font = "10px sans-serif";
+                this.textAlign = "left";
+                this.textBaseline = "alphabetic";
+                this.measureContext = document.createElement("canvas").getContext("2d");
+            }
+
+            beginPath() { this.path = []; }
+            moveTo(x, y) { this.path.push(`M ${x} ${y}`); this.point = [x, y]; }
+            lineTo(x, y) { this.path.push(`L ${x} ${y}`); this.point = [x, y]; }
+            closePath() { this.path.push("Z"); }
+
+            arcTo(x, y, nextX, nextY, radius) {
+                // The sign uses arcTo for perpendicular rounded rectangle corners.
+                const dx = this.point[0] - x;
+                const dy = this.point[1] - y;
+                const nextDx = nextX - x;
+                const nextDy = nextY - y;
+                const length = Math.hypot(dx, dy);
+                const nextLength = Math.hypot(nextDx, nextDy);
+                if (!length || !nextLength || !radius) {
+                    this.lineTo(x, y);
+                    return;
+                }
+                this.lineTo(x + dx / length * radius, y + dy / length * radius);
+                const endX = x + nextDx / nextLength * radius;
+                const endY = y + nextDy / nextLength * radius;
+                const sweep = dx * nextDy - dy * nextDx < 0 ? 1 : 0;
+                this.path.push(`A ${radius} ${radius} 0 0 ${sweep} ${endX} ${endY}`);
+                this.point = [endX, endY];
+            }
+
+            paint(style) { return escape(style.url || style); }
+
+            add(shape) {
+                if (this.shadowBlur && this.shadowColor !== "rgba(0, 0, 0, 0)") {
+                    const id = "effect" + this.defs.length;
+                    this.defs.push(`<filter id="${id}" x="-100%" y="-100%" width="300%" height="300%"><feDropShadow dx="${this.shadowOffsetX || 0}" dy="${this.shadowOffsetY || 0}" stdDeviation="${this.shadowBlur / 2}" flood-color="${escape(this.shadowColor)}"/></filter>`);
+                    shape = `<g filter="url(#${id})">${shape}</g>`;
+                }
+                this.elements.push(shape);
+            }
+
+            fillRect(x, y, width, height) {
+                this.add(`<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${this.paint(this.fillStyle)}"/>`);
+            }
+            fill() { this.add(`<path d="${this.path.join(" ")}" fill="${this.paint(this.fillStyle)}"/>`); }
+            stroke() { this.add(`<path d="${this.path.join(" ")}" fill="none" stroke="${this.paint(this.strokeStyle)}" stroke-width="${this.lineWidth}"/>`); }
+
+            createLinearGradient(x1, y1, x2, y2) {
+                const id = "gradient" + this.defs.length;
+                const index = this.defs.length;
+                const stops = [];
+                this.defs.push("");
+                return {
+                    url: `url(#${id})`,
+                    addColorStop: (offset, color) => {
+                        stops.push(`<stop offset="${offset}" stop-color="${escape(color)}"/>`);
+                        this.defs[index] = `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops.join("")}</linearGradient>`;
+                    }
+                };
+            }
+
+            measureText(text) {
+                this.measureContext.font = this.font;
+                return this.measureContext.measureText(text);
+            }
+
+            fillText(text, x, y, maxWidth) {
+                const font = this.font.trim().match(/^(?:(.*?)\s+)?([\d.]+)px\s+(.+)$/);
+                const anchor = { center: "middle", right: "end" }[this.textAlign] || "start";
+                const baseline = this.textBaseline === "middle" ? "central" : "alphabetic";
+                const length = maxWidth && this.measureText(text).width > maxWidth
+                    ? ` textLength="${maxWidth}" lengthAdjust="spacingAndGlyphs"` : "";
+                this.add(`<text x="${x}" y="${y}" fill="${this.paint(this.fillStyle)}" font-weight="${escape(font[1] || "normal")}" font-size="${font[2]}" font-family="${escape(font[3])}" text-anchor="${anchor}" dominant-baseline="${baseline}" xml:space="preserve"${length}>${escape(text)}</text>`);
+            }
+
+            drawImage(canvas, x, y) {
+                // Keep the existing pixel-based illumination overlay; the sign stays vector.
+                this.add(`<image x="${x}" y="${y}" width="${canvas.width}" height="${canvas.height}" href="${canvas.toDataURL()}"/>`);
+            }
+        }
+
+        const padding = frame.padding;
+        const width = frame.width + padding.left + padding.right;
+        const height = frame.height + padding.top + padding.bottom;
+        const defs = [];
+        const board = new SVGContext(defs);
+        const colors = new SVGContext(defs);
+        const mask = new SVGContext(defs);
+        frame.draw(board, width, height, 1, data);
+        mask.fillStyle = "#000";
+        mask.fillRect(0, 0, frame.width, frame.height);
+        mask.fillStyle = mask.strokeStyle = "#FFF";
+        renderContent(colors, mask, data);
+        defs.push(`<mask id="content-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="${frame.width}" height="${frame.height}" style="mask-type:luminance">${mask.elements.join("")}</mask>`);
+        let overlay = "";
+        if (data.signBoard.light) {
+            const light = new SVGContext(defs);
+            frame.shadow(light, width, height, 1, data);
+            overlay = light.elements.join("");
+        }
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs>${defs.join("")}</defs>${board.elements.join("")}<g transform="translate(${padding.left} ${padding.top})"><g mask="url(#content-mask)">${colors.elements.join("")}</g></g>${overlay}</svg>`;
+        const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.download = "駅名標_" + data.sta.name.kanji + ".svg";
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
     function draw(ctx, width, height, scale, data){
         const frame = frames[data.signBoard.type];
         const fp = frame.padding;
@@ -1000,7 +1129,7 @@
                 }, {once: true});
                 document.execCommand("copy");
             },
-            saveAsPNG, update
+            saveAsPNG, saveAsSVG, update
         }
     });
 
