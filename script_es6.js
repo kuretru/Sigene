@@ -1,5 +1,5 @@
 (() => {
-    const FONT_JAPANESE = "'Mplus 1p', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'M+ 1p', sans-serif";
+    const FONT_JAPANESE = "'M PLUS 1p', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'M+ 1p', sans-serif";
     const FONT_HELVETICA = "'Helvetica', 'Arial', sans-serif";
     const FONT_FRUTIGER = "'Cabin', 'Open Sans', 'Lato', sans-serif";
     const FONT_CHINESE = "'Noto Sans SC', sans-serif";
@@ -1081,7 +1081,7 @@
                 const config = {
                     japanese: {
                         families: ["M PLUS 1p:n5,n8"],
-                        urls: ["https://fonts.googleapis.com/css?family=M+PLUS+1p"]
+                        urls: ["https://fonts.googleapis.com/css?family=M+PLUS+1p:500,800"]
                     },
                     chinese: {
                         families: ["Noto Sans SC:n4"],

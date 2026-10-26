@@ -13,7 +13,7 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 (function () {
-  var FONT_JAPANESE = "'Mplus 1p', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'M+ 1p', sans-serif";
+  var FONT_JAPANESE = "'M PLUS 1p', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'M+ 1p', sans-serif";
   var FONT_HELVETICA = "'Helvetica', 'Arial', sans-serif";
   var FONT_FRUTIGER = "'Cabin', 'Open Sans', 'Lato', sans-serif";
   var FONT_CHINESE = "'Noto Sans SC', sans-serif";
@@ -1201,7 +1201,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         var config = {
           japanese: {
             families: ["M PLUS 1p:n5,n8"],
-            urls: ["https://fonts.googleapis.com/css?family=M+PLUS+1p"]
+            urls: ["https://fonts.googleapis.com/css?family=M+PLUS+1p:500,800"]
           },
           chinese: {
             families: ["Noto Sans SC:n4"],
