@@ -390,6 +390,24 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
   };
   //------------------------------枠設定------------------------------
   var frames = {
+    "PRINT-R": {
+      padding: {
+        top: 16,
+        bottom: 16,
+        left: 16,
+        right: 16
+      },
+      width: 1830,
+      height: 490,
+      draw: function draw(ctx, fw, fh) {
+        ctx.fillStyle = "#000";
+        roundRect(ctx, 0, 0, fw, fh, 30);
+        ctx.fill();
+        ctx.fillStyle = "#FFF";
+        roundRect(ctx, this.padding.left, this.padding.top, this.width, this.height, 14);
+        ctx.fill();
+      }
+    },
     "SE-6": {
       padding: {
         top: 80,
@@ -972,7 +990,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     renderContent(colors, mask, data);
     defs.push("<mask id=\"content-mask\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"".concat(frame.width, "\" height=\"").concat(frame.height, "\" style=\"mask-type:luminance\">").concat(mask.elements.join(""), "</mask>"));
     var overlay = "";
-    if (data.signBoard.light) {
+    if (data.signBoard.light && frame.shadow) {
       var light = new SVGContext(defs);
       frame.shadow(light, width, height, 1, data);
       overlay = light.elements.join("");
@@ -1023,7 +1041,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     }
     colorCtx.putImageData(colorImg, 0, 0);
     ctx.drawImage(colorCanvas, fp.left, fp.top);
-    if (data.signBoard.light) frame.shadow(ctx, fw, fh, scale, data);
+    if (data.signBoard.light && frame.shadow) frame.shadow(ctx, fw, fh, scale, data);
   }
 
   //Vue
@@ -1191,8 +1209,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     },
     computed: {
       enableBoardLight: function enableBoardLight() {
-        var t = this.signBoard.type;
-        return t.substr(0, 2) === "SE" || t[0] === "B";
+        return typeof frames[this.signBoard.type].shadow === "function";
       }
     },
     methods: {
